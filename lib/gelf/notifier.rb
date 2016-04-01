@@ -78,7 +78,7 @@ module GELF
     end
 
     def default_options=(options)
-      @default_options = self.class.stringify_keys(options)
+      @default_options = options
     end
 
     # +mapping+ may be a hash, 'logger' (GELF::LOGGER_MAPPING) or 'direct' (GELF::DIRECT_MAPPING).
@@ -169,7 +169,7 @@ module GELF
                        { 'short_message' => object.to_s }
                      end
 
-      @hash = default_options.merge(self.class.stringify_keys(args.merge(primary_data)))
+      @hash = default_options.merge(args.merge(primary_data))
       convert_hoptoad_keys_to_graylog2
       set_file_and_line if @collect_file_and_line
       set_timestamp
@@ -246,15 +246,6 @@ module GELF
       validate_hash
 
       Zlib::Deflate.deflate(@hash.to_json).bytes
-    end
-
-    def self.stringify_keys(hash)
-      hash.keys.each do |key|
-        value, key_s = hash.delete(key), key.to_s
-        raise ArgumentError.new("Both #{key.inspect} and #{key_s} are present.") if hash.has_key?(key_s)
-        hash[key_s] = value
-      end
-      hash
     end
   end
 end
