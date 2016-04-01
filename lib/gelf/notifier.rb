@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'gelf/transport/udp'
 require 'gelf/transport/tcp'
 
