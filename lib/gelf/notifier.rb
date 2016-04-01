@@ -236,8 +236,6 @@ module GELF
     end
 
     def validate_hash
-      raise ArgumentError.new("Hash is empty.") if @hash.nil? || @hash.empty?
-
       @hash['level'] = @level_mapping[@hash['level']]
     end
 
