@@ -13,7 +13,6 @@ module GELF
     def initialize(host = 'localhost', port = 12201, max_size = 'WAN', default_options = {})
       @enabled = true
       @collect_file_and_line = true
-      @random = Random.new
 
       self.level = GELF::DEBUG
       self.max_chunk_size = max_size
@@ -222,8 +221,8 @@ module GELF
 
       # Maximum total size is 8192 byte for UDP datagram. Split to chunks if bigger. (GELF v1.0 supports chunking)
       if data.count > @max_chunk_size
-        id = @random.bytes(8)
-        msg_id = Digest::MD5.digest("#{Time.now.to_f}-#{id}")[0, 8]
+        now = Time.now
+        msg_id = Digest::MD5.digest("#{now.to_i}-#{now.hash}")[0, 8]
         num, count = 0, (data.count.to_f / @max_chunk_size).ceil
         data.each_slice(@max_chunk_size) do |slice|
           datagrams << "\x1e\x0f" + msg_id + [num, count, *slice].pack('C*')
