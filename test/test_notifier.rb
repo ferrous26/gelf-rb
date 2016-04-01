@@ -10,7 +10,7 @@ class TestNotifier < Test::Unit::TestCase
     assert_equal( { 'version' => '1.0', 'level' => GELF::UNKNOWN, 'protocol' => 0,
                     'host' => 'default_hostname', 'facility' => 'gelf-rb' },
                   n.default_options )
-    n.addresses, n.max_chunk_size, n.default_options = [['graylog2.org', 7777]], :lan, {:host => 'grayhost'}
+    n.addresses, n.max_chunk_size, n.default_options = [['graylog2.org', 7777]], :lan, {'host' => 'grayhost'}
     assert_equal [['graylog2.org', 7777]], n.addresses
     assert_equal 8154, n.max_chunk_size
     assert_equal({'host' => 'grayhost'}, n.default_options)
@@ -83,17 +83,13 @@ class TestNotifier < Test::Unit::TestCase
       end
 
       should "covert hash keys to strings" do
-        hash = @notifier.__send__(:extract_hash, :short_message => :message)
+        hash = @notifier.__send__(:extract_hash, 'short_message' => :message)
         assert hash.has_key?('short_message')
         assert !hash.has_key?(:short_message)
       end
 
-      should "not overwrite keys on convert" do
-        assert_raise(ArgumentError) { @notifier.__send__(:extract_hash, :short_message => :message1, 'short_message' => 'message2') }
-      end
-
       should "use default_options" do
-        @notifier.default_options = {:foo => 'bar', 'short_message' => 'will be hidden by explicit argument', 'host' => 'some_host'}
+        @notifier.default_options = {'foo' => 'bar', 'short_message' => 'will be hidden by explicit argument', 'host' => 'some_host'}
         hash = @notifier.__send__(:extract_hash, { 'version' => '1.0', 'short_message' => 'message' })
         assert_equal 'bar', hash['foo']
         assert_equal 'message', hash['short_message']
@@ -101,7 +97,7 @@ class TestNotifier < Test::Unit::TestCase
 
       should "be compatible with HoptoadNotifier" do
         # https://github.com/thoughtbot/hoptoad_notifier/blob/master/README.rdoc, section Going beyond exceptions
-        hash = @notifier.__send__(:extract_hash, :error_class => 'Class', :error_message => 'Message')
+        hash = @notifier.__send__(:extract_hash, 'error_class' => 'Class', 'error_message' => 'Message')
         assert_equal 'Class: Message', hash['short_message']
       end
 
@@ -284,10 +280,6 @@ class TestNotifier < Test::Unit::TestCase
   context "with notifier with real sender" do
     setup do
       @notifier = GELF::Notifier.new('no_such_host_321')
-    end
-
-    should "raise exception" do
-      assert_raise(SocketError) { @notifier.notify('Hello!') }
     end
 
     should "not raise exception if asked" do
