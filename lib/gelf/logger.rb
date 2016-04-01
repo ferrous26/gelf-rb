@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module GELF
   # Methods for compatibility with Ruby Logger.
   module LoggerCompatibility
