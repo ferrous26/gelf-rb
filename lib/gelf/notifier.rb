@@ -210,9 +210,7 @@ module GELF
     end
 
     def check_presence_of_mandatory_attributes
-      if @hash['short_message'].nil?
-        raise ArgumentError.new('short_message is missing. Option short_message must be set.')
-      end
+      @hash['short_message'] ||= 'gelf-rb: short_message is missing. Option short_message must be set.'
     end
 
     def datagrams_from_hash
