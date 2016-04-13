@@ -210,10 +210,8 @@ module GELF
     end
 
     def check_presence_of_mandatory_attributes
-      %w(version short_message host).each do |attribute|
-        if @hash[attribute].to_s.empty?
-          raise ArgumentError.new("#{attribute} is missing. Options version, short_message and host must be set.")
-        end
+      if @hash['short_message'].nil?
+        raise ArgumentError.new('short_message is missing. Option short_message must be set.')
       end
     end
 
