@@ -1,9 +1,13 @@
+require 'thread'
+
 module GELF
   module Transport
     class UDP
       attr_reader :addresses
 
       def initialize(initial_addresses)
+        @consumers = []
+        @q = SizedQueue.new(128)
         self.addresses = initial_addresses
       end
 
@@ -11,11 +15,10 @@ module GELF
         @addresses = new_addresses
         reset_sockets
       end
-      
+
       def send_datagrams(datagrams)
-        sock = socket
         datagrams.each do |datagram|
-          sock.send(datagram, 0)
+          @q << datagram
         end
       end
 
@@ -25,36 +28,25 @@ module GELF
 
       private
 
-      def socket
-        idx = socket_index
-        sock = sockets[idx]
-        set_socket_index((idx + 1) % @addresses.length)
-        sock
-      end
+      def create_consumer_for host, port
+        Thread.new do
+          socket = UDPSocket.new(Addrinfo.ip(host).afamily)
+          socket.connect(host, port)
 
-      def sockets
-        Thread.current[:gelf_udp_sockets] ||= configure_sockets
+          loop do
+            datagram = @q.pop
+            break unless datagram
+            socket.send(datagram, 0)
+          end
+        end
       end
 
       def reset_sockets
-        return unless Thread.current.key?(:gelf_udp_sockets)
-        Thread.current[:gelf_udp_sockets].each(&:close)
-        Thread.current[:gelf_udp_sockets] = nil
-      end
-
-      def socket_index
-        Thread.current[:gelf_udp_socket_idx] ||= 0
-      end
-
-      def set_socket_index(value)
-        Thread.current[:gelf_udp_socket_idx] = value
-      end
-
-      def configure_sockets
-        @addresses.map do |host, port|
-          UDPSocket.new(Addrinfo.ip(host).afamily).tap do |socket|
-            socket.connect(host, port)
-          end
+        @consumers.count.times do
+          @q << nil
+        end
+        @consumers = @addresses.map do |address|
+          create_consumer_for(*address)
         end
       end
     end
