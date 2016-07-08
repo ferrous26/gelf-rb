@@ -24,10 +24,18 @@ module GELF
       self.default_options['version'] = SPEC_VERSION
       self.default_options['host'] ||= Socket.gethostname
       self.default_options['level'] ||= GELF::UNKNOWN
-      self.default_options['facility'] ||= 'gelf-rb'
-      self.default_options['protocol'] ||= GELF::Protocol::UDP
 
-      if self.default_options['protocol'] == GELF::Protocol::TCP
+      facility = 'gelf-rb'
+      self.default_options.delete_if do |k, v|
+        if k.to_s.end_with? 'facility'
+          facility = v
+        end
+      end
+      self.default_options['_facility'] = facility
+
+      @protocol = self.default_options.delete('protocol') || GELF::Protocol::UDP
+
+      if @protocol == GELF::Protocol::TCP
         @sender = GELF::Transport::TCP.new([[host, port]])
       else
         @sender = GELF::Transport::UDP.new([[host, port]])
@@ -150,7 +158,7 @@ module GELF
       extract_hash(*args)
       @hash['level'] ||= message_level unless message_level.nil?
       if @hash['level'] >= level
-        if self.default_options['protocol'] == GELF::Protocol::TCP
+        if @protocol == GELF::Protocol::TCP
           validate_hash
           @sender.send(@hash.to_json + "\0")
         else
