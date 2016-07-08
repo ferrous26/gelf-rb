@@ -31,9 +31,10 @@ module GELF
           facility = v
         end
       end
-      self.default_options['_facility'] = facility
+      self.default_options['facility'] = facility
 
-      @protocol = self.default_options.delete('protocol') || GELF::Protocol::UDP
+      self.default_options['protocol'] ||= GELF::Protocol::UDP
+      @protocol = self.default_options['protocol']
 
       if @protocol == GELF::Protocol::TCP
         @sender = GELF::Transport::TCP.new([[host, port]])
