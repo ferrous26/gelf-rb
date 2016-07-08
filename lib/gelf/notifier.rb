@@ -148,7 +148,7 @@ module GELF
     def notify_with_level!(message_level, *args)
       return unless @enabled
       extract_hash(*args)
-      @hash['level'] = message_level unless message_level.nil?
+      @hash['level'] ||= message_level unless message_level.nil?
       if @hash['level'] >= level
         if self.default_options['protocol'] == GELF::Protocol::TCP
           validate_hash
