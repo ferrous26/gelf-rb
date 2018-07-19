@@ -241,6 +241,12 @@ module GELF
     end
 
     def validate_hash
+      @hash.each_pair.each do |key, value|
+        if String === value && value.encoding == Encoding::BINARY
+          @hash[key] =
+            value.encode(Encoding::UTF_8, invalid: :replace, undef: :replace)
+        end
+      end
       @hash['level'] = @level_mapping[@hash['level']]
     end
 
@@ -251,3 +257,4 @@ module GELF
     end
   end
 end
+p
