@@ -31,12 +31,11 @@ module GELF
       def create_consumer_for host, port
         Thread.new do
           socket = UDPSocket.new(Addrinfo.ip(host).afamily)
-          socket.connect(host, port)
 
           loop do
             datagram = @q.pop
             break unless datagram
-            socket.send(datagram, 0)
+            socket.send(datagram, 0, host, port)
           end
         end
       end
