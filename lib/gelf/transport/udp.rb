@@ -28,15 +28,43 @@ module GELF
 
       private
 
+      def new_socket host, port
+        socket = UDPSocket.new(Addrinfo.ip(host).afamily)
+        socket.connect(host, port)
+        socket
+      end
+
       def create_consumer_for host, port
         Thread.new do
-          socket = UDPSocket.new(Addrinfo.ip(host).afamily)
-          socket.connect(host, port)
+          retry_count = 0
+          socket      = new_socket(host, port)
 
           loop do
             datagram = @q.pop
             break unless datagram
-            socket.send(datagram, 0)
+
+            begin
+              retry_count += 1
+              socket.send(datagram, 0)
+              retry_count = 0
+
+            rescue Errno::ECONNREFUSED
+              $stderr.puts "#{Time.now}: Failed to send to GELF server. "\
+                           "Resetting and trying again in #{retry_count}s."
+              socket = new_socket(host, port)
+
+              if retry_count < 5
+                sleep retry_count
+                retry
+              else
+                # we really want to propagate the error back up the
+                # stack to a layer that has the full logical message;
+                # that layer has the info needed to locally log the
+                # full message...however, this requires a larger refactor
+                $stderr.puts "#{Time.now}: Giving up on GELF for now."\
+                             "Dropping log..."
+              end
+            end
           end
         end
       end
