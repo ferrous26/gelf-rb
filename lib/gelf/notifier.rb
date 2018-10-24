@@ -273,6 +273,12 @@ module GELF
           raise ArgumentError, "Both #{key.inspect} and #{key_s} are present."
         end
 
+        if String === value && value.encoding == Encoding::BINARY
+          value = value.encode(Encoding::UTF_8,
+                               invalid: :replace,
+                               undef: :replace)
+        end
+
         obj[key_s] = value
       end
     end
